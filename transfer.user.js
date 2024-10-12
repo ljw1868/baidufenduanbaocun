@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         金旺保存
+// @name         百度云保存
 // @name:en_US   BDY Batch Saver
-// @name:zh-CN   金旺保存
+// @name:zh-CN   金旺百度云盘保存
 // @namespace    System233
 // @version      0.3
 // @description  批量保存百度云文件3
