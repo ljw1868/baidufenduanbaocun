@@ -1,10 +1,10 @@
 // ==UserScript==
-// @name         百度云批量保存
+// @name         金旺保存
 // @name:en_US   BDY Batch Saver
-// @name:zh-CN   百度云批量保存
+// @name:zh-CN   金旺保存
 // @namespace    System233
 // @version      0.3
-// @description  批量保存百度云文件
+// @description  批量保存百度云文件3
 // @author       System233
 // @match        *://pan.baidu.com/s/*
 // @match        *://yun.baidu.com/s/*
@@ -12,9 +12,7 @@
 // @grant        none
 // @license      GPL-3.0-only
 // @run-at       document-start
-// @source       https://github.com/System233/PIGCATS
-// @notes        20231226 v0.3 修复不识别新弹窗的问题
-// @notes        20221117 v0.2 修复嵌套文件夹保存问题
+
 // ==/UserScript==
 // Copyright (c) 2022 System233
 //
@@ -25,7 +23,7 @@
     const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     const waitForSelector = async (selector, node, timeout) => new Promise((resolve, reject) => {
         node = node || document;
-        timeout = timeout || 10000;
+        timeout = timeout || 100000;
         const interval = 50;
         const limit = timeout / interval;
         ;
@@ -119,12 +117,12 @@
         const name = getFileName(file);
         const newPath = `${path}${path.endsWith('/') ? '' : '/'}${name}`;
         logger.log("进入目录", newPath);
-        await waitForSelector('.filename', file).then(x => x.click());
-        await sleep(100);
+       // await waitForSelector('.filename', file).then(x => x.click());
+        await sleep(3000);
         let files = [], times = 0;
         for (let i = 0; i < 20 && times < 3; ++i) {
             await waitForSelector('[style*="visibility: hidden;"] .spinner', document);
-            await sleep(100);
+            await sleep(5000);
             let next = getFileList();
             if (next.length == files.length) {
                 times++;
@@ -138,18 +136,22 @@
         // await doTransfer(files, newpath);
         const start = 0;
         const end = files.length - 1;
-        const mid = Math.floor((start + end) / 2);
-        await doTransfer(files, newPath, start, mid);
-        await doTransfer(files, newPath, mid + 1, end);
+        const mid = Math.floor((start + end-1) / 2);
+        const mid2 = Math.floor(mid / 2);
+        await doTransfer(files, newPath, start, mid2);
+        await doTransfer(files, newPath, mid2 + 1, mid);
+        await doTransfer(files, newPath, mid + 1, mid + mid2);
+        await doTransfer(files, newPath, mid + mid2 + 1, end);
         await waitForSelector('a[data-deep="-1"]', document).then(x => x.click());
         await sleep(50);
         logger.log("离开目录", newPath);
     };
     const doTransfer = async (files, path, start, end) => {
+
         if (start == null) {
             start = 0;
         }
-        if (end == null) {
+        if (end == null || end>=files.length - 1) {
             end = files.length - 1;
         }
         if (end - start < 0) {
@@ -163,9 +165,12 @@
                 await doJoinTransfer(files[start], path);
             }
             else {
-                const mid = Math.floor((start + end) / 2);
-                await doTransfer(files, path, start, mid);
-                await doTransfer(files, path, mid + 1, end);
+                const mid = Math.floor((start + end-1) / 2);
+                const mid2 = Math.floor(mid / 2);
+                await doTransfer(files, path, start, mid2);
+                await doTransfer(files, path, mid2 + 1, mid);
+                await doTransfer(files, path, mid + 1, mid + mid2);
+                await doTransfer(files, path, mid + mid2 + 1, end);
             }
         }
         else {
@@ -204,13 +209,100 @@
             }
         }, true);
     };
-    const load = () => {
-        const html = `<a class="g-button" href="javascript:;" title="批量保存到网盘"><span class="g-button-right"><em class="icon icon-save-disk" title="批量保存到网盘"></em><span class="text" style="width: auto;">批量保存到网盘</span></span></a>`;
+    const transfer5 = async () => {
+        await waitForSelector('[node-type="shareSave"]', document).then(el => el.click());
+        const confirm = await waitForSelector('[node-type="confirm"]', document);
+        confirm.addEventListener('click', async (e) => {
+            e.stopImmediatePropagation();
+            waitForSelector('.dialog-control span', document).then(x => x.click()).catch(logger.error);
+            try {
+                const files = getSelectedFileList();
+                const path = await getSelectedPath();
+                logger.log("开始转存", files.length);
+                const start1 = Number("0");
+                const end1 = Number("499");
+                logger.log(files, path, start1-1, end1)
+                await doTransfer(files, path, start1, end1);
+
+            }
+            catch (err) {
+                logger.error('发生错误', err);
+            }
+        }, true);
+    };
+    const load5 = () => {
+        const html = `<a class="g-button" href="javascript:;" title="网盘批量保存"><span class="g-button-right"><em class="icon icon-save-disk" title="网盘批量保存"></em><span class="text" style="width: auto;">保存1-500</span></span></a>`;
         const div = document.createElement('div');
         div.innerHTML = html;
         const a = div.children[0];
-        a.addEventListener('click', transfer);
+        a.addEventListener('click', transfer5);
         waitForSelector('[node-type="shareSave"]', document).then(node => node.after(a));
+
     };
-    load();
+    load5();
+
+    const transfer10 = async () => {
+        await waitForSelector('[node-type="shareSave"]', document).then(el => el.click());
+        const confirm = await waitForSelector('[node-type="confirm"]', document);
+        confirm.addEventListener('click', async (e) => {
+            e.stopImmediatePropagation();
+            waitForSelector('.dialog-control span', document).then(x => x.click()).catch(logger.error);
+            try {
+                const files = getSelectedFileList();
+                const path = await getSelectedPath();
+                logger.log("开始转存", files.length);
+                const start1 = Number("500");
+                const end1 = Number("999");
+                logger.log(files, path, start1-1, end1)
+                await doTransfer(files, path, start1, end1);
+
+            }
+            catch (err) {
+                logger.error('发生错误', err);
+            }
+        }, true);
+    };
+
+    const load10 = () => {
+        const html = `<a class="g-button" href="javascript:;" title="网盘批量保存"><span class="g-button-right"><em class="icon icon-save-disk" title="网盘批量保存"></em><span class="text" style="width: auto;">保存501-1000</span></span></a>`;
+        const div = document.createElement('div');
+        div.innerHTML = html;
+        const a = div.children[0];
+        a.addEventListener('click', transfer10);
+        waitForSelector('[node-type="shareSave"]', document).then(node => node.after(a));
+
+    };
+    load10();
+    const transfer15 = async () => {
+        await waitForSelector('[node-type="shareSave"]', document).then(el => el.click());
+        const confirm = await waitForSelector('[node-type="confirm"]', document);
+        confirm.addEventListener('click', async (e) => {
+            e.stopImmediatePropagation();
+            waitForSelector('.dialog-control span', document).then(x => x.click()).catch(logger.error);
+            try {
+                const files = getSelectedFileList();
+                const path = await getSelectedPath();
+                logger.log("开始转存", files.length);
+                const start1 = Number("1000");
+                const end1 = Number("1499");
+                logger.log(files, path, start1-1, end1)
+                await doTransfer(files, path, start1, end1);
+
+            }
+            catch (err) {
+                logger.error('发生错误', err);
+            }
+        }, true);
+    };
+    const load15 = () => {
+        const html = `<a class="g-button" href="javascript:;" title="网盘批量保存"><span class="g-button-right"><em class="icon icon-save-disk" title="网盘批量保存"></em><span class="text" style="width: auto;">保存1001-1500</span></span></a>`;
+        const div = document.createElement('div');
+        div.innerHTML = html;
+        const a = div.children[0];
+        a.addEventListener('click', transfer15);
+        waitForSelector('[node-type="shareSave"]', document).then(node => node.after(a));
+
+    };
+    load15();
+
 })();
